@@ -36,7 +36,7 @@ buscaminas/
 ├── packages/
 │   └── motor/                ← lógica del juego + tipos compartidos
 │       ├── src/
-│       │   ├── tipos.ts      ← Ronda, Opcion, EstadoRonda, Accion...
+│       │   ├── tipos.ts      ← Ronda, Opcion, RondaEnJuego, Accion...
 │       │   ├── ronda.ts      ← reglas de la sección 3 de la spec
 │       │   ├── jugador.ts    ← interfaz Jugador
 │       │   └── bot/          ← EstrategiaBot y sus implementaciones
