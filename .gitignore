@@ -1,0 +1,19 @@
+# Dependencias (se regeneran con pnpm install)
+node_modules/
+
+# Secretos: nunca se commitean (ARQUITECTURA.md, sección 10)
+.env
+.env.*
+!.env.example
+
+# Salidas de build y de tests (se regeneran)
+dist/
+.next/
+coverage/
+
+# Logs
+*.log
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
