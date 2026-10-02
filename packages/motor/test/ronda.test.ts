@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crearRonda, elegirOpcion } from "../src/ronda";
+import { crearRonda, elegirOpcion, plantarse } from "../src/ronda";
 
 function opcionesDePrueba() {
   const opciones = [];
@@ -31,3 +31,16 @@ describe("elegir una opción", () => {
     expect(despues.terminada).toBe(true);
   });
 });
+
+describe("plantarse", () => {
+  it ("termina la ronda y conserva el pozo y las opciones elegidas", () =>{
+    const ronda = crearRonda(opcionesDePrueba());
+    const conDosAciertos = elegirOpcion(elegirOpcion(ronda,"c1"),"c2");
+
+    const despues = plantarse(conDosAciertos);
+
+    expect(despues.pozo).toBe(2);
+    expect(despues.terminada).toBe(true);
+    expect(despues.idsElegidas).toEqual(["c1", "c2"]);
+  })
+})

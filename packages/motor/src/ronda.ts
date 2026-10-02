@@ -18,3 +18,7 @@ export function elegirOpcion(ronda: RondaEnJuego, idOpcion: string): RondaEnJueg
 
   return { ...ronda, idsElegidas, pozo: ronda.pozo + 1 };
 }
+
+export function plantarse (ronda: RondaEnJuego):RondaEnJuego{
+  return{...ronda, terminada: true};
+}
