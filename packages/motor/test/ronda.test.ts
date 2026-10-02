@@ -20,4 +20,14 @@ describe("elegir una opción", () => {
 
     expect(despues.pozo).toBe(1);
   });
+
+  it("deja el pozo en 0 y termina la ronda cuando la opción es una mina", () => {
+    const ronda = crearRonda(opcionesDePrueba());
+    const conDosAciertos = elegirOpcion(elegirOpcion(ronda, "c1"), "c2");
+
+    const despues = elegirOpcion(conDosAciertos, "m1");
+
+    expect(despues.pozo).toBe(0);
+    expect(despues.terminada).toBe(true);
+  });
 });
