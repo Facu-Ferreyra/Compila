@@ -1,0 +1,12 @@
+{
+    "name": "motor",
+    "private": true,
+    "scripts": {
+        "test": "vitest run",
+        "typecheck": "tsc"
+    },
+    "devDependencies": {
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.2"
+    }
+}
