@@ -76,4 +76,11 @@ describe("jugadas inválidas", () => {
 
     expect(() => elegirOpcion(ronda, "no-existe")).toThrow();
   });
+
+  it("lanza un error al plantarse en una ronda terminada", () => {
+    const ronda = crearRonda(opcionesDePrueba());
+    const terminadaPorMina = elegirOpcion(ronda, "m1");
+
+    expect(() => plantarse(terminadaPorMina)).toThrow();
+  });
 })

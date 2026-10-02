@@ -31,6 +31,10 @@ export function elegirOpcion(ronda: RondaEnJuego, idOpcion: string): RondaEnJueg
 }
 
 export function plantarse (ronda: RondaEnJuego):RondaEnJuego{
+  if (ronda.terminada) {
+    throw new Error("La ronda ya terminó");
+  }
+
   return{...ronda, terminada: true};
 }
 
