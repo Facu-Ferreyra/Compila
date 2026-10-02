@@ -12,6 +12,8 @@ export function elegirOpcion(ronda: RondaEnJuego, idOpcion: string): RondaEnJueg
     throw new Error(`La opción ${idOpcion} no existe en la ronda`);
   }
 
+  if(ronda.idsElegidas.includes(idOpcion)){throw new Error (`La opción ${idOpcion} ya ha sido seleccionada en la ronda`);}
+
   const idsElegidas = [...ronda.idsElegidas, idOpcion];
 
   if (!opcion.esCorrecta) {

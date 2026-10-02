@@ -37,7 +37,7 @@ describe("elegir una opción", () => {
     for (let i = 1; i <= 12; i++) {
     ronda = elegirOpcion(ronda,`c${i}`);
     }
-    
+
     expect(ronda.pozo).toBe(15);
     expect(ronda.terminada).toBe(true);
   });
@@ -53,5 +53,14 @@ describe("plantarse", () => {
     expect(despues.pozo).toBe(2);
     expect(despues.terminada).toBe(true);
     expect(despues.idsElegidas).toEqual(["c1", "c2"]);
+  })
+})
+
+describe("jugadas inválidas", () => {
+  it ("lanza un error al elegir una opción ya elegida", () =>{
+    const ronda = crearRonda(opcionesDePrueba());
+    const conUnAcierto = elegirOpcion(ronda,"c1");
+
+    expect(() => elegirOpcion(conUnAcierto, "c1")).toThrow();
   })
 })
