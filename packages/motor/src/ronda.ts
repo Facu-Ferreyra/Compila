@@ -7,6 +7,10 @@ export function crearRonda(opciones: Opcion[]): RondaEnJuego {
 }
 
 export function elegirOpcion(ronda: RondaEnJuego, idOpcion: string): RondaEnJuego {
+  if (ronda.terminada) {
+    throw new Error("La ronda ya terminó");
+  }
+
   const opcion = ronda.opciones.find((o) => o.id === idOpcion);
   if (!opcion) {
     throw new Error(`La opción ${idOpcion} no existe en la ronda`);

@@ -63,4 +63,17 @@ describe("jugadas inválidas", () => {
 
     expect(() => elegirOpcion(conUnAcierto, "c1")).toThrow();
   })
+
+  it("lanza un error al elegir una opción en una ronda terminada", () => {
+    const ronda = crearRonda(opcionesDePrueba());
+    const terminadaPorMina = elegirOpcion(ronda, "m1");
+
+    expect(() => elegirOpcion(terminadaPorMina, "c1")).toThrow();
+  });
+
+  it("lanza un error al elegir una opción que no existe en la ronda", () => {
+    const ronda = crearRonda(opcionesDePrueba());
+
+    expect(() => elegirOpcion(ronda, "no-existe")).toThrow();
+  });
 })
