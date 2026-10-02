@@ -30,6 +30,17 @@ describe("elegir una opción", () => {
     expect(despues.pozo).toBe(0);
     expect(despues.terminada).toBe(true);
   });
+
+  it("deja el pozo en 15 y termina la ronda al encontrar las 12 correctas", () => {
+    let ronda = crearRonda(opcionesDePrueba());
+    
+    for (let i = 1; i <= 12; i++) {
+    ronda = elegirOpcion(ronda,`c${i}`);
+    }
+    
+    expect(ronda.pozo).toBe(15);
+    expect(ronda.terminada).toBe(true);
+  });
 });
 
 describe("plantarse", () => {
