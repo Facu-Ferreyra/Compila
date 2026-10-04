@@ -38,6 +38,7 @@ buscaminas/
 │       ├── src/
 │       │   ├── tipos.ts      ← Ronda, Opcion, RondaEnJuego, Accion...
 │       │   ├── ronda.ts      ← reglas de la sección 3 de la spec
+│       │   ├── turnos.ts     ← reglas de turnos y eliminación (spec 7.2)
 │       │   ├── jugador.ts    ← interfaz Jugador
 │       │   └── bot/          ← EstrategiaBot y sus implementaciones
 │       └── test/

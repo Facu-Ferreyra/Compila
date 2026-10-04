@@ -11,3 +11,17 @@ export type RondaEnJuego = {
   pozo: number;
   terminada: boolean;
 };
+
+export type JugadorEnRonda = {
+  id: string;
+  pozo: number;
+  enRonda: boolean;
+};
+
+export type RondaPorTurnos = {
+  opciones: Opcion[];
+  idsElegidas: string[];
+  jugadores: JugadorEnRonda[];
+  indiceTurno: number;
+  terminada: boolean;
+};
