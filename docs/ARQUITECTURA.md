@@ -1,4 +1,4 @@
-# Buscaminas de Programación — Arquitectura v0.1
+# Buscaminas de Programación — Arquitectura v0.2
 
 > Complementa a `docs/SPEC.md`. La spec dice **qué** hace el sistema; este documento dice **cómo** está construido.
 > Todo lo marcado como *provisional* se confirma o corrige al llegar al paso correspondiente de la hoja de ruta (sección 9), y el cambio se registra acá en el mismo commit.
@@ -18,7 +18,7 @@
 | Tiempo real | Socket.IO vía `@nestjs/websockets` | Salas multijugador |
 | Frontend | Next.js (App Router) + React | Visto en el curso; SEO para las páginas públicas |
 | Tests backend | Jest (default de NestJS) + Supertest | Tests de endpoints |
-| Contenedores | Docker + docker-compose | PostgreSQL local desde el paso 3 |
+| Contenedores | Docker + docker-compose | PostgreSQL local desde el paso 2 |
 | CI | GitHub Actions | Lint + tests en cada push y PR |
 
 Las versiones exactas se fijan al crear cada paquete, usando la última LTS/estable disponible en ese momento.
@@ -71,6 +71,7 @@ buscaminas/
 | `AuthModule` | Registro, login email/contraseña, OAuth GitHub, emisión y refresco de tokens |
 | `UsuariosModule` | Perfil, estadísticas |
 | `RondasModule` | Banco de rondas (lectura para el juego, CRUD para admin) |
+| `RondasPropiasModule` | CRUD de las rondas privadas de cada usuario (spec 6.5) |
 | `PartidasModule` | Modo Solo y Vs IA; usa `motor` |
 | `DesafioDiarioModule` | Selección de las 10 rondas del día y cambio a las 00:00 de Argentina |
 | `RankingModule` | Consultas de ranking diario e histórico |
@@ -85,12 +86,13 @@ buscaminas/
 
 - La autenticación vive **solo en el backend**. Next.js no maneja sesiones propias.
 - **Access token:** JWT de vida corta (~15 min). Viaja en el header `Authorization: Bearer …` y en el `auth` del handshake de Socket.IO.
+- **Contraseñas:** se guardan hasheadas con **argon2id** (alternativa: bcrypt). El hash nunca sale del backend.
 - **Refresh token:** vida larga, en cookie `httpOnly`, `Secure`, `SameSite=Lax`. Se guarda hasheado en la base para poder revocarlo.
 - **Guards de NestJS:** `JwtAuthGuard` (¿está logueado?) y `RolesGuard` + decorador `@Roles('ADMIN')` (¿tiene permiso?). Sin rol suficiente → `403`.
 - **OAuth GitHub:** con Passport (`passport-github2`). Vinculación de cuentas por email verificado (spec 6.1).
 - **Admin:** script `pnpm --filter api seed:admin` que lee `ADMIN_EMAIL` (spec 6.4).
 
-⚠️ **Nota para el deploy:** si el frontend y el backend quedan en dominios distintos (ej. `*.vercel.app` y `*.onrender.com`), el navegador trata la cookie del refresh token como de terceros y puede bloquearla. Solución prevista: un dominio propio con subdominios (`app.midominio.com` y `api.midominio.com`). Se confirma en el paso 9.
+⚠️ **Nota para el deploy:** si el frontend y el backend quedan en dominios distintos (ej. `*.vercel.app` y `*.onrender.com`), el navegador trata la cookie del refresh token como de terceros y puede bloquearla. Solución prevista: un dominio propio con subdominios (`app.midominio.com` y `api.midominio.com`). Se confirma en el paso 5 (primer deploy).
 
 ---
 
@@ -105,12 +107,13 @@ buscaminas/
 
 ## 7. Modelo de datos (provisional)
 
-Se refina en los pasos 3, 5, 6 y 8. Los nombres de campos definitivos quedan en `schema.prisma`.
+Se refina en los pasos 2, 4, 6, 7, 8 y 12. Los nombres de campos definitivos quedan en `schema.prisma`.
 
 ```mermaid
 erDiagram
     Usuario ||--o{ Partida : juega
     Usuario ||--o{ CuentaOAuth : vincula
+    Usuario ||--o{ Ronda : crea
     Ronda ||--|{ Opcion : tiene
     DesafioDiario ||--|{ DesafioRonda : contiene
     Ronda ||--o{ DesafioRonda : aparece_en
@@ -135,6 +138,7 @@ erDiagram
         string categoria
         int dificultad
         EstadoRonda estado
+        string autorId "nulo en rondas del banco"
     }
     Opcion {
         string id
@@ -165,8 +169,9 @@ erDiagram
 ```
 
 Preguntas abiertas que se resuelven al implementar:
-- ¿Una partida de sala es **una** `Partida` con varios participantes, o una `Partida` por jugador? (paso 8)
-- ¿El estado en curso de una sala vive en memoria, en la base o en Redis? (paso 8)
+- ¿Una partida de sala es **una** `Partida` con varios participantes, o una `Partida` por jugador? (paso 12)
+- ¿El estado en curso de una sala vive en memoria, en la base o en Redis? (paso 12)
+- ¿Cómo se prueba que el desafío diario **nunca** toma una ronda con `autorId`? Candidato: un test que siembra rondas propias y verifica que no aparecen. (paso 7)
 
 ---
 
@@ -188,8 +193,13 @@ Preguntas abiertas que se resuelven al implementar:
 | GET | `/ranking/historico` | — | Ranking histórico |
 | POST | `/admin/rondas/generar` | ADMIN | Pedir borrador al LLM |
 | PATCH | `/admin/rondas/:id` | ADMIN | Editar / aprobar |
+| GET | `/rondas-propias` | ✔ | Listar las rondas propias del usuario |
+| POST | `/rondas-propias` | ✔ | Crear una ronda propia |
+| GET | `/rondas-propias/:id` | ✔ | Ver una ronda propia (`404` si es de otro) |
+| PATCH | `/rondas-propias/:id` | ✔ | Editar una ronda propia (`404` si es de otro) |
+| DELETE | `/rondas-propias/:id` | ✔ | Borrar una ronda propia (`404` si es de otro) |
 
-### Socket.IO (paso 8)
+### Socket.IO (paso 12)
 Eventos previstos: `sala:unirse`, `sala:estado`, `sala:iniciar`, `turno:jugar`, `turno:resultado`, `turno:timeout`, `ronda:fin`, `partida:fin`, `jugador:desconectado`.
 
 ---
@@ -202,15 +212,20 @@ Cada paso termina con un commit (o PR) y cumple su **criterio de terminado**.
 |---|---|---|
 | 0 | Repo, monorepo, `CLAUDE.md`, docs | `pnpm install` funciona; docs commiteados |
 | 1 | Motor: tipos y reglas del modo Solo | Tests Vitest de acierto, mina, plantarse, ronda perfecta y opción repetida en verde |
-| 2 | Motor: turnos, eliminación y bots | Tests de las 3 dificultades con semilla aleatoria fija |
-| 3 | API base + Prisma + Docker (Postgres) | Partida Solo jugable completa desde Postman |
-| 4 | Frontend mínimo | Partida Solo jugable en el navegador |
-| 5 | Auth (email + GitHub), roles, perfil | Guards probados: 401 sin login, 403 sin rol |
-| 6 | Desafío diario + ranking | Cambio de día verificado con test que simula las 23:59 y 00:01 de Argentina |
-| 7 | Vs IA en el frontend | Partida completa contra cada dificultad |
+| 2 | API base + Prisma + Docker (Postgres) + CI | Partida Solo jugable completa desde Postman; GitHub Actions corre lint y tests en cada push y PR |
+| 3 | Frontend mínimo | Partida Solo jugable en el navegador, con estados de carga, vacío y error |
+| 4 | Auth email + roles, perfil | Guards probados: 401 sin login, 403 sin rol; contraseñas hasheadas con argon2id |
+| 5 | Primer deploy | Link público con HTTPS, base en la nube y refresh token funcionando en producción |
+| 6 | Rondas propias (CRUD) + aislamiento | Tests: un usuario no puede ver, editar ni borrar rondas de otro (`404`) |
+| 7 | Desafío diario + ranking | Cambio de día verificado con test que simula las 23:59 y 00:01 de Argentina |
 | 8 | Panel admin + LLM | Ronda generada, revisada y aprobada aparece en el banco |
-| 9 | Salas con Socket.IO | 3 navegadores juegan una partida completa, con una desconexión y reconexión |
-| 10 | CI/CD + deploy | Link público funcionando; README con capturas y decisiones técnicas |
+| 9 | Motor: turnos, eliminación y bots | Tests de las 3 dificultades con semilla aleatoria fija |
+| 10 | Vs IA en el frontend | Partida completa contra cada dificultad |
+| 11 | OAuth GitHub | Login con GitHub y vinculación por email verificado probados |
+| 12 | Salas con Socket.IO | 3 navegadores juegan una partida completa, con una desconexión y reconexión |
+| 13 | Cierre de portfolio + CD | README con capturas y decisiones técnicas, `docs/justificacion.md`, video demo, deploy automático desde `main` |
+
+El paso 9 retoma el trabajo pausado en la rama `paso-2-motor-turnos-bots` (commit `bd9ae2e`). La hoja de ruta se reordenó para tener antes el deploy, la auth y un CRUD de usuario.
 
 ---
 
