@@ -1,4 +1,4 @@
-# Buscaminas de Programación — Especificación v0.3
+# Buscaminas de Programación — Especificación v0.4
 
 > Estado: **aprobada para empezar la implementación**. Las decisiones tomadas están en la sección 11.
 > Regla del proyecto: ningún comportamiento se programa si no está descrito acá. Si el código y la spec no coinciden, se corrige uno de los dos a propósito, nunca por accidente.
@@ -59,7 +59,7 @@ Juego web de preguntas de programación con mecánica de "arriesgar o plantarse"
 
 ### 4.2 Estados de una ronda
 `BORRADOR` → `APROBADA` → (opcional) `ARCHIVADA`.
-Solo las rondas `APROBADA` pueden aparecer en partidas.
+Solo las rondas `APROBADA` del banco pueden aparecer en partidas. Las rondas propias no usan estos estados (ver sección 6.5).
 
 ### 4.3 Generación asistida por IA (panel de administración)
 - Solo accesible para usuarios con rol `ADMIN` (ver sección 6.4).
@@ -115,6 +115,14 @@ Muestra: nombre de usuario, avatar, partidas jugadas, mejor puntaje, racha de d�
 - El backend verifica el rol en cada endpoint de administración (`/admin/*`). Ocultar el panel en el frontend es solo comodidad visual, no seguridad.
 - En v1 hay un solo admin, pero el modelo admite varios sin cambios.
 
+### 6.5 Rondas propias
+- Todo usuario registrado puede crear, ver, editar y borrar sus **rondas propias**.
+- Deben cumplir los requisitos de la sección 4.1 (16 opciones, 12/4, explicaciones). Si no los cumplen, el servidor las rechaza.
+- Son **privadas**: solo las ve y las juega su autor, en modo Solo.
+- No pasan por aprobación ni entran al banco: **nunca** aparecen en el desafío diario, en Vs IA ni en salas.
+- **No suman al ranking.**
+- Si un usuario pide, edita o borra una ronda propia de otro, el servidor responde `404`, igual que si no existiera.
+
 ---
 
 ## 7. Salas multijugador
@@ -146,6 +154,10 @@ Muestra: nombre de usuario, avatar, partidas jugadas, mejor puntaje, racha de d�
 - Toda jugada se valida en el servidor: turno correcto, opción existente y no elegida antes, ronda activa.
 - El puntaje lo calcula y guarda exclusivamente el servidor.
 - Límite de peticiones en login y registro.
+- **Aislamiento de datos:** un usuario solo accede a sus propios recursos privados. Un recurso ajeno responde `404`, no `403`.
+- Ninguna respuesta incluye el hash de la contraseña.
+- Los errores no exponen stack traces ni detalles internos al cliente.
+- CORS restringido al dominio del frontend.
 
 ---
 
@@ -153,6 +165,8 @@ Muestra: nombre de usuario, avatar, partidas jugadas, mejor puntaje, racha de d�
 
 - Diseño responsivo (usable en celular).
 - Accesible: el tablero se puede jugar con teclado, y los estados acierto/mina no dependen solo del color.
+- Validación de formularios en el frontend (comodidad) y en el backend (seguridad): el backend nunca confía en la del frontend.
+- Toda pantalla que carga datos muestra estados de carga, vacío y error.
 - El motor del juego no depende de frameworks y tiene tests unitarios.
 - CI: los tests corren en cada push; no se mergea a `main` con tests fallando.
 
@@ -180,3 +194,4 @@ Muestra: nombre de usuario, avatar, partidas jugadas, mejor puntaje, racha de d�
 | 5 | Definición del admin | Campo `rol` + script de seed con `ADMIN_EMAIL` |
 | 6 | Zona horaria del desafío diario | Hora de Argentina (UTC−3) |
 | 7 | Stack y arquitectura | Ver `docs/ARQUITECTURA.md` |
+| 8 | CRUD de usuario | Rondas propias privadas (sección 6.5) |
